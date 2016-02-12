@@ -37,6 +37,30 @@ np.seterr(invalid='ignore')
 TEXT_WIDTH = 20
 TEXT_HEIGHT = 5
 
+def nan_to_zeros(xList, yList):
+    for i in xrange(len(xList)):
+        if math.isnan(xList[i]):
+            xList[i] = 0
+        if math.isnan(yList[i]):
+            yList[i] = 0
+
+def formating(number):
+    eps = 0.00005
+    if abs(number) < eps:
+        number = float(format(number, '.4f'))
+    elif number != np.NaN:
+        number = float(format(number, '.4f'))
+    return number
+
+def tostr(li):
+    res = ''
+    for el in li:
+        res += ', ' + str(el)
+    if len(res) > 2:
+        return res[2:]
+    else:
+        return ''
+
 class Znumber:
     def __init__(self, A = [], As = [], B = [], Bs = []):
         self.A = A
@@ -295,13 +319,63 @@ class Main:
         pass
 
     def calculate(self):
-        pass
+        try:
+            funcs = [Zsum, Zsub, Zprod, Zdiv, Zmin, Zmax]
+            self.Z1_number = self.Z1.convert_to_znumber('Z1')
+            self.Z2_number = self.Z2.convert_to_znumber('Z2')
+
+        except ValueError as e:
+            self.calculated = False
+            self.error.set(str(e))
+            self.Z3.delete()
+            return
+
+        try:
+            ct = self.choice.get()
+            operation_func = dict(zip(self.operations, funcs))
+            Z3a, Z3as, Z3b, Z3bs, Z3p, Z1p, Z2p = operation_func[ct](self.Z1_number.A, self.Z1_number.As,\
+                self.Z1_number.B, self.Z1_number.Bs, self.Z2_number.A, self.Z2_number.As, self.Z2_number.B, self.Z2_number.Bs)
+            #print Z3a, Z3as, Z3b, Z3bs, Z3p, Z1p, Z2p
+            for i in range(len(Z3a)):
+                Z3a[i] = formating(Z3a[i])
+                Z3as[i] = formating(Z3as[i])
+                Z3b[i] = formating(Z3b[i])
+                Z3bs[i] = formating(Z3bs[i])
+            self.Z3.delete()
+            self.Z3.A.text.insert("1.0", tostr(Z3a))
+            self.Z3.As.text.insert(END, tostr(Z3as))
+            self.Z3.B.text.insert(END, tostr(Z3b))
+            self.Z3.Bs.text.insert(END, tostr(Z3bs))
+            self.error.set('')
+            self.calculated = True
+        except:
+            self.Z3.delete()
+            self.error.set('Error - [FATAL]: calculations failed')
+            self.calculated = False
 
     def clear(self):
-        pass
+        self.Z1.delete()
+        self.Z2.delete()
+        self.Z1.clicked_all(False)
+        self.Z2.clicked_all(False)
+        self.Z1.set_init_text()
+        self.Z2.set_init_text()
 
     def example(self):
-        pass
+        self.Z1.clicked_all(True)
+        self.Z2.clicked_all(True)
+        self.Z1.delete()
+        self.Z2.delete()
+        self.Z1.A.text.insert(END, '0, 0, 0, 0, 0.2, 0.4, 0.6, 0.8, 1, 0.5, 0')
+        self.Z1.As.text.insert(END, '0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10')
+        self.Z1.B.text.insert(END, '0, 0, 0, 0, 0.5, 1, 0.5, 0, 0, 0, 0')
+        self.Z1.Bs.text.insert(END, '0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0')
+
+        self.Z2.A.text.insert(END, '0, 0, 0.5, 1, 0.5, 0, 0, 0, 0, 0, 0')
+        self.Z2.As.text.insert(END, '0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10')
+        self.Z2.B.text.insert(END, '0, 0, 0, 0, 0, 0, 0, 0.5, 1, 0.5, 0')
+        self.Z2.Bs.text.insert(END, '0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0')
+        self.error.set('')
 
 if __name__ == "__main__":
     try:
@@ -310,4 +384,3 @@ if __name__ == "__main__":
         root = ttk.Tk()
     app = Main(root)
     root.mainloop()
-
