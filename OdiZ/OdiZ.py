@@ -37,6 +37,7 @@ np.seterr(invalid='ignore')
 
 TEXT_WIDTH = 20
 TEXT_HEIGHT = 5
+DPI = 700
 
 def nan_to_zeros(xList, yList):
     for i in xrange(len(xList)):
@@ -110,6 +111,7 @@ class Znumber_GUI:
             self.B = None
             self.Bs = None
             parts = ['A', 'As', 'B', 'Bs']
+            self.plotted = dict(zip(['A', 'B'], [False, False]))
             if frame != None:
                 for part in parts:
                     z_part = PartOfZnumber_GUI(frame, part)
@@ -139,7 +141,7 @@ class Znumber_GUI:
 
         def convert_to_znumber(self, number):
             self.delete_spaces()
-            if self.validate(number):
+            if number == 'Result' or self.validate(number) or self.validate(number):
                 A = [float(el) for el in self.new_A.split(',')]
                 As = [float(el) for el in self.new_As.split(',')]
                 B = [float(el) for el in self.new_B.split(',')]
@@ -168,6 +170,94 @@ class Znumber_GUI:
 BASE_FONT = ("Helvetica", 12)
 BASE_FONT_BOLD = ("Helvetica", 12, 'bold')
 
+class ToolTipManager:
+
+    label = None
+    window = None
+    active = 0
+
+    def __init__(self):
+        self.tag = None
+
+    def getcontroller(self, widget):
+        if self.tag is None:
+
+            self.tag = "ui_tooltip_%d" % id(self)
+            widget.bind_class(self.tag, "<Enter>", self.enter)
+            widget.bind_class(self.tag, "<Leave>", self.leave)
+
+            # pick suitable colors for tooltips
+            try:
+                self.bg = "systeminfobackground"
+                self.fg = "systeminfotext"
+                widget.winfo_rgb(self.fg) # make sure system colors exist
+                widget.winfo_rgb(self.bg)
+            except:
+                self.bg = "#ffffe0"
+                self.fg = "black"
+
+        return self.tag
+
+    def register(self, widget, text):
+        widget.ui_tooltip_text = text
+        tags = list(widget.bindtags())
+        tags.append(self.getcontroller(widget))
+        widget.bindtags(tuple(tags))
+
+    def unregister(self, widget):
+        tags = list(widget.bindtags())
+        tags.remove(self.getcontroller(widget))
+        widget.bindtags(tuple(tags))
+
+    # event handlers
+
+    def enter(self, event):
+        widget = event.widget
+        if not self.label:
+            # create and hide balloon help window
+            self.popup = Toplevel(bg=self.fg, bd=1)
+            self.popup.overrideredirect(1)
+            self.popup.withdraw()
+            self.label = Label(
+                self.popup, fg=self.fg, bg=self.bg, bd=0, padx=2
+                )
+            self.label.pack()
+            self.active = 0
+        self.xy = event.x_root + 16, event.y_root + 10
+        self.event_xy = event.x, event.y
+        self.after_id = widget.after(200, self.display, widget)
+
+    def display(self, widget):
+        if not self.active:
+            # display balloon help window
+            text = widget.ui_tooltip_text
+            if callable(text):
+                text = text(widget, self.event_xy)
+            self.label.config(text = text)
+            self.popup.deiconify()
+            self.popup.lift()
+            self.popup.geometry("+%d+%d" % self.xy)
+            self.active = 1
+            self.after_id = None
+
+    def leave(self, event):
+        widget = event.widget
+        if self.active:
+            self.popup.withdraw()
+            self.active = 0
+        if self.after_id:
+            widget.after_cancel(self.after_id)
+            self.after_id = None
+
+_manager = ToolTipManager()
+
+def register(widget, text):
+    _manager.register(widget, text)
+
+
+def unregister(widget):
+    _manager.unregister(widget)
+
 class Main:
     def __init__(self, root):
         self.root = root
@@ -178,9 +268,10 @@ class Main:
         self.set_combobox()
         self.set_choice_result()
         self.set_output_texts()
+        self.set_tips()
         self.set_graphics()
         self.calculated = False
-
+        self.plotted = False
         self.root.bind('<Return>', self.calculate)
 
     def set_layout(self):
@@ -260,13 +351,23 @@ class Main:
         ttk.Button(self.frame3, text = "Clear", command = self.clear).grid(column = 1, row = 0, sticky = (N, W, E, S))
         ttk.Button(self.frame3, text = "Help").grid(column = 2, row = 0, sticky = (N, W, E, S))
 
-        ttk.Button(self.frame1, text = "Show Z1 (Part A)").grid(column = 1, row = 6, sticky = (N, W, E, S))
-        ttk.Button(self.frame1, text = "Show Z2 (Part A)").grid(column = 3, row = 6, sticky = (N, W, E, S))
-        ttk.Button(self.frame1, text = "Show Result (Part A)").grid(column = 1, columnspan = 2, row = 12, sticky = (N, W, E, S))
+        plotZ1a = ttk.Button(self.frame1, text = "Show Z1 (Part A)", command = lambda: self.plot_one_graph(self.Z1, 'Z1', 'A'))
+        plotZ1a.grid(column = 1, row = 6, sticky = (N, W, E, S))
 
-        ttk.Button(self.frame1, text = "Show Z1 (Part B)").grid(column = 2, row = 6, sticky = (N, W, E, S))
-        ttk.Button(self.frame1, text = "Show Z2 (Part B)").grid(column = 4, row = 6, sticky = (N, W, E, S))
-        ttk.Button(self.frame1, text = "Show Result (Part B)").grid(column = 3, columnspan = 2, row = 12, sticky = (N, W, E, S))
+        plotZ2a = ttk.Button(self.frame1, text = "Show Z2 (Part A)", command = lambda: self.plot_one_graph(self.Z2, 'Z2', 'A'))
+        plotZ2a.grid(column = 3, row = 6, sticky = (N, W, E, S))
+
+        plotResa = ttk.Button(self.frame1, text = "Show Result (Part A)", command = lambda: self.plot_one_graph(self.Z3, 'Result', 'A'))
+        plotResa.grid(column = 1, columnspan = 2, row = 12, sticky = (N, W, E, S))
+
+        plotZ1b = ttk.Button(self.frame1, text = "Show Z1 (Part B)", command = lambda: self.plot_one_graph(self.Z1, 'Z1', 'B'))
+        plotZ1b.grid(column = 2, row = 6, sticky = (N, W, E, S))
+
+        plotZ2b = ttk.Button(self.frame1, text = "Show Z2 (Part B)", command = lambda: self.plot_one_graph(self.Z2, 'Z2', 'B'))
+        plotZ2b.grid(column = 4, row = 6, sticky = (N, W, E, S))
+
+        plotResb = ttk.Button(self.frame1, text = "Show Result (Part B)", command = lambda: self.plot_one_graph(self.Z3, 'Result', 'B'))
+        plotResb.grid(column = 3, columnspan = 2, row = 12, sticky = (N, W, E, S))
 
         ttk.Button(self.frame1, text="Show All", width = 20).grid(column = 1, columnspan = 4, row = 13)
 
@@ -311,6 +412,16 @@ class Main:
         self.Z3.B.text.grid(column = 3, row = 11, pady = 5, padx = 5, sticky = (W, E, N, S))
         self.Z3.Bs.text.grid(column = 4, row = 11, pady = 5, padx = 5, sticky=  (W, E, N, S))
 
+    def set_tips(self):
+        register(self.Z1.A.text, "Z1 (Part A)")
+        register(self.Z1.As.text, "Z1 (Part As)")
+        register(self.Z1.B.text, "Z1 (Part B)")
+        register(self.Z1.Bs.text, "Z1 (Part Bs)")
+        register(self.Z2.A.text, "Z2 (Part A)")
+        register(self.Z2.As.text, "Z2 (Part As)")
+        register(self.Z2.B.text, "Z2 (Part B)")
+        register(self.Z2.Bs.text, "Z2 (Part Bs)")
+
     def read(self, Z, number):
         file_opt = {}
         file_opt['defaultextension'] = '.txt'
@@ -354,8 +465,66 @@ class Main:
     def set_graphics(self):
         style.use("ggplot")
 
-    def plot_one_graph(self):
-        pass
+    def plotter(self, Z, number, part):
+        try:
+            xList = []
+            yList = []
+            self.base.clear()
+            if part == 'A':
+                xList, yList = Z.convert_to_znumber(number).As, Z.convert_to_znumber(number).A
+            if part == 'B':
+                xList, yList = Z.convert_to_znumber(number).Bs, Z.convert_to_znumber(number).B
+            nan_to_zeros(xList, yList)
+            title = number + '( Part ' + part + ')'
+            self.base.plot(xList, yList, marker = '8', linestyle='--')
+            self.base.set_xlim([0 - (max(xList) - min(xList)) / 10, max(xList) + (max(xList) - min(xList)) / 10])
+            self.base.set_ylim([-0.05, 1.05])
+            self.base.set_title(title)
+            Z.plotted[part] = True
+            self.plotted = True
+        except:
+            self.error.set('Error - [Plotter]: plotting failed')
+
+
+    def plot_one_graph(self, Z, number, part = 'A'):
+
+        if Z.plotted[part]:
+            self.plt.grid_forget()
+            self.save_canvas.grid_forget()
+            Z.plotted[part] = False
+            self.plotted = False
+            return
+
+        for zn in [self.Z1, self.Z2, self.Z3]:
+            if zn.plotted['A'] or zn.plotted['B']:
+                self.plt.grid_forget()
+                self.save_canvas.grid_forget()
+                zn.plotted['A'] = False
+                zn.plotted['B'] = False
+                self.plotted = False
+
+        try:
+            if number == 'Result' and not self.calculated:
+                raise ValueError("Error - Result [A]: Not calculated yet")
+            if number != 'Result':
+                Z.validate(number)
+            self.error.set('')
+        except ValueError as e:
+            self.error.set(str(e))
+            return
+
+        self.fig = Figure()
+        self.fig.set_size_inches(2400.0/float(DPI), 2100.0/float(DPI))
+        self.base = self.fig.add_subplot(111)
+        self.plt = Canvas(self.frame2, width = 1)
+        self.plt.grid(row = 4, column = 0, columnspan = 2, padx = 100, pady = 15)
+        plot_canvas = FigureCanvasTkAgg(self.fig, self.plt)
+        plot_canvas.show()
+        plot_canvas.get_tk_widget().grid(column = 0, row = 0)
+        self.save_canvas = Canvas(self.frame2, width = 1)
+        self.save_canvas.grid(row = 6, column = 0, columnspan = 2, padx = 100, pady = 15)
+        ttk.Button(self.save_canvas, text = "Save Graph").grid(column = 0, row = 0)
+        self.plotter(Z, number, part)
 
     def plot_all_graphs(self):
         pass
@@ -388,12 +557,16 @@ class Main:
                 Z3bs[i] = formating(Z3bs[i])
             self.Z3.delete()
             self.Z3.A.text.insert("1.0", tostr(Z3a))
-            self.Z3.As.text.insert(END, tostr(Z3as))
-            self.Z3.B.text.insert(END, tostr(Z3b))
-            self.Z3.Bs.text.insert(END, tostr(Z3bs))
+            self.Z3.As.text.insert("1.0", tostr(Z3as))
+            self.Z3.B.text.insert("1.0", tostr(Z3b))
+            self.Z3.Bs.text.insert("1.0", tostr(Z3bs))
             self.error.set('')
             self.calculated = True
             self.Z3.clicked_all(True)
+            if self.plotted:
+                self.plt.grid_forget()
+                self.save_canvas.grid_forget()
+                self.plotted = False
         except:
             self.Z3.delete()
             self.error.set('Error - [FATAL]: calculations failed')
@@ -406,6 +579,11 @@ class Main:
         self.Z2.clicked_all(False)
         self.Z1.set_init_text()
         self.Z2.set_init_text()
+        if self.plotted:
+            self.plt.grid_forget()
+            self.save_canvas.grid_forget()
+            self.plotted = False
+        self.Z3.delete()
 
     def example(self):
         self.Z1.clicked_all(True)
@@ -422,6 +600,11 @@ class Main:
         self.Z2.B.text.insert(END, '0, 0, 0, 0, 0, 0, 0, 0.5, 1, 0.5, 0')
         self.Z2.Bs.text.insert(END, '0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0')
         self.error.set('')
+        if self.plotted:
+            self.plt.grid_forget()
+            self.save_canvas.grid_forget()
+            self.plotted = False
+        self.Z3.delete()
 
 if __name__ == "__main__":
     try:
