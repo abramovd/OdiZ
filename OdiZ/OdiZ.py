@@ -369,7 +369,7 @@ class Main:
         plotResb = ttk.Button(self.frame1, text = "Show Result (Part B)", command = lambda: self.plot_one_graph(self.Z3, 'Result', 'B'))
         plotResb.grid(column = 3, columnspan = 2, row = 12, sticky = (N, W, E, S))
 
-        ttk.Button(self.frame1, text="Show All", width = 20).grid(column = 1, columnspan = 4, row = 13)
+        ttk.Button(self.frame1, text="Show All", width = 20, command = self.plot_all_graphs).grid(column = 1, columnspan = 4, row = 13)
 
     def set_combobox(self):
         COMBOBOX_WIDTH = 60
@@ -516,18 +516,93 @@ class Main:
         self.fig = Figure()
         self.fig.set_size_inches(2400.0/float(DPI), 2100.0/float(DPI))
         self.base = self.fig.add_subplot(111)
-        self.plt = Canvas(self.frame2, width = 1)
-        self.plt.grid(row = 4, column = 0, columnspan = 2, padx = 100, pady = 15)
+        self.plt = Canvas(self.frame2, width = 265, height = 230)
+        self.plt.grid(row = 4, column = 0, columnspan = 2, padx = 100)
         plot_canvas = FigureCanvasTkAgg(self.fig, self.plt)
         plot_canvas.show()
         plot_canvas.get_tk_widget().grid(column = 0, row = 0)
-        self.save_canvas = Canvas(self.frame2, width = 1)
+        self.save_canvas = Canvas(self.frame2, width = 1, height = 100)
         self.save_canvas.grid(row = 6, column = 0, columnspan = 2, padx = 100, pady = 15)
         ttk.Button(self.save_canvas, text = "Save Graph").grid(column = 0, row = 0)
         self.plotter(Z, number, part)
 
+    def plotter_result(self):
+
+        znumb = self.Z3.convert_to_znumber('Result')
+        #znumb1 = self.Z1.convert_to_znumber('Z1')
+        n_sub_graph = 0
+        for xList, yList, part in [[znumb.As, znumb.A, 'A'], [znumb.Bs, znumb.B, 'B']]:
+            self.sub_graphs[n_sub_graph].clear()
+            self.sub_graphs[n_sub_graph].plot(xList, yList, marker = '8', linestyle='--')
+            self.sub_graphs[n_sub_graph].set_xlim([0 - (max(xList) - min(xList)) / 10, max(xList) + (max(xList) - min(xList)) / 10])
+            self.sub_graphs[n_sub_graph].set_ylim([-0.05, 1.05])
+            self.sub_graphs[n_sub_graph].set_title('Result (Part' + part + ')')
+            n_sub_graph += 1
+
+    def plotter_all(self):
+
+        znumb1 = self.Z1.convert_to_znumber('Z1')
+        znumb2 = self.Z2.convert_to_znumber('Z2')
+        n_sub_graph = 0
+        for xList, yList, part in [[znumb1.As, znumb1.A, 'A'], [znumb1.Bs, znumb1.B, 'B'],\
+                                    [znumb2.As, znumb2.A, 'A'], [znumb2.Bs, znumb2.B, 'B']]:
+            self.sub_graphs[n_sub_graph].clear()
+            self.sub_graphs[n_sub_graph].plot(xList, yList, marker = '8', linestyle='--')
+            self.sub_graphs[n_sub_graph].set_xlim([0 - (max(xList) - min(xList)) / 10, max(xList) + (max(xList) - min(xList)) / 10])
+            self.sub_graphs[n_sub_graph].set_ylim([-0.05, 1.05])
+            if n_sub_graph < 2:
+                title = 'Z1'
+            else:
+                title = 'Z2'
+            self.sub_graphs[n_sub_graph].set_title(title + ' (Part' + part + ')')
+            n_sub_graph += 1
+        #except:
+        #self.error.set('Error - [Plotter]: plotting failed')
+
+
     def plot_all_graphs(self):
-        pass
+        if not self.calculated:
+            self.error.set("Error - Result [ALL]: Not calculated yet")
+            return
+
+        self.error.set('')
+        self.all_graphs = Toplevel()
+        self.all_graphs.title('All graphs')
+        self.all_graphs.focus_set()
+        self.all_graphs.columnconfigure(0, weight = 1)
+        self.all_graphs.columnconfigure(1, weight = 1)
+        self.all_graphs.columnconfigure(2, weight = 1)
+        self.all_graphs.columnconfigure(3, weight = 1)
+        self.all_graphs.rowconfigure(0, weight = 1)
+        self.all_graphs.rowconfigure(1, weight = 1)
+
+        self.fig1 = Figure()
+        #self.fig2 = Figure()
+        self.fig1.set_size_inches(5000.0/float(DPI), 4700.0/float(DPI))
+        #self.fig2.set_size_inches(3000.0/float(DPI), 4700.0/float(DPI))
+        self.sub_graphs = [self.fig1.add_subplot(2, 2, 1), self.fig1.add_subplot(2, 2, 2), self.fig1.add_subplot(2, 2, 3),\
+                           self.fig1.add_subplot(2, 2, 4)]
+        plt1 = Canvas(self.all_graphs)
+        plt1.grid(row = 0, column = 0, columnspan = 2, padx = 50, pady = 5)
+        plt_canvas = FigureCanvasTkAgg(self.fig1, plt1)
+        plt_canvas.show()
+        plt_canvas.get_tk_widget().grid(column = 0, row = 0)
+        ttk.Button(self.all_graphs, text = "Save Graph").grid(column = 0, columnspan = 2, row = 1)
+        Message(self.all_graphs, text = "").grid(column=0, columnspan = 2, row = 2, pady = 15)
+        self.plotter_all()
+
+        self.fig2 = Figure()
+        self.fig2.set_size_inches(3000.0/float(DPI), 4700.0/float(DPI))
+        self.sub_graphs = [self.fig2.add_subplot(2, 1, 1), self.fig2.add_subplot(2, 1, 2)]
+        plt2 = Canvas(self.all_graphs)
+        plt2.grid(row = 0, column = 2, columnspan = 2, padx = 50, pady = 5)
+        plt_canvas2 = FigureCanvasTkAgg(self.fig2, plt2)
+        plt_canvas2.show()
+        plt_canvas2.get_tk_widget().grid(column = 2, row = 0)
+        ttk.Button(self.all_graphs, text = "Save Graph").grid(column = 2, columnspan = 2, row = 1)
+        Message(self.all_graphs, text = "").grid(column = 2, columnspan = 2, row = 2, pady = 15)
+
+        self.plotter_result()
 
     def save_graph(self):
         pass
