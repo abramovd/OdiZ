@@ -88,7 +88,6 @@ class PartOfZnumber_GUI:
             self.text.insert("1.0", "Part " + part_name)
 
     def callbackZ(self):
-        print self.clicked
         if self.clicked == False:
             self.text.delete("1.0", END)
             self.clicked = True
@@ -146,7 +145,6 @@ class Znumber_GUI:
             self.Bs.text.delete("1.0", END)
 
         def clicked_all(self, clc = True):
-            print clc
             self.A.clicked = clc
             self.As.clicked = clc
             self.B.clicked = clc
@@ -335,7 +333,7 @@ class Main:
             operation_func = dict(zip(self.operations, funcs))
             Z3a, Z3as, Z3b, Z3bs, Z3p, Z1p, Z2p = operation_func[ct](self.Z1_number.A, self.Z1_number.As,\
                 self.Z1_number.B, self.Z1_number.Bs, self.Z2_number.A, self.Z2_number.As, self.Z2_number.B, self.Z2_number.Bs)
-            #print Z3a, Z3as, Z3b, Z3bs, Z3p, Z1p, Z2p
+
             for i in range(len(Z3a)):
                 Z3a[i] = formating(Z3a[i])
                 Z3as[i] = formating(Z3as[i])
@@ -348,6 +346,7 @@ class Main:
             self.Z3.Bs.text.insert(END, tostr(Z3bs))
             self.error.set('')
             self.calculated = True
+            self.Z3.clicked_all(True)
         except:
             self.Z3.delete()
             self.error.set('Error - [FATAL]: calculations failed')
