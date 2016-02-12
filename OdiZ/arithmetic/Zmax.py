@@ -2,8 +2,8 @@ from __future__ import division
 import numpy as np
 import scipy as sp
 from scipy.optimize import minimize
-from Rmax import Rmax
-from convmaxR import convmaxR
+from .Rmax import Rmax
+from .convmaxR import convmaxR
 
 def Zmax(Z1A, Z1As, Z1B, Z1Bs, Z2A, Z2As, Z2B, Z2Bs):
     

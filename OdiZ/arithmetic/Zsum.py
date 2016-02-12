@@ -2,8 +2,8 @@ from __future__ import division
 import numpy as np
 import scipy as sp
 from scipy.optimize import minimize
-from Rsum import Rsum
-from convsumR import convsumR
+from .Rsum import Rsum
+from .convsumR import convsumR
 
 def Zsum(Z1A, Z1As, Z1B, Z1Bs, Z2A, Z2As, Z2B, Z2Bs):
     

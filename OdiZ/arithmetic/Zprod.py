@@ -2,8 +2,8 @@ from __future__ import division
 import numpy as np
 import scipy as sp
 from scipy.optimize import minimize
-from Rprod import Rprod
-from convprodR import convprodR
+from .Rprod import Rprod
+from .convprodR import convprodR
 
 def Zprod(Z1A, Z1As, Z1B, Z1Bs, Z2A, Z2As, Z2B, Z2Bs):
     
