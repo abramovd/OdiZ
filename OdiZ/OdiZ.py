@@ -95,6 +95,13 @@ class PartOfZnumber_GUI:
     def get(self):
         return self.text
 
+    def validate(self, number, part):
+        format = r'^[-+]?[0-9]*\.?[0-9]+(?:,[-+]?[0-9]*\.?[0-9]+?|)+$'
+        text = self.text.get("1.0", END).replace(" ", "")
+        if len(text) == 0 or re.match(format, text) == None:
+            raise ValueError('Error - ' + number + '[' + part + ']: bad format / mismatch')
+        return
+
 class Znumber_GUI:
         def __init__(self, frame = None):
             self.A = None
@@ -241,9 +248,9 @@ class Main:
         self.Z2.Bs.text.grid(column = 4, row = 4, pady = 5, padx = 5, sticky = (W, E, N, S))
 
     def set_buttons(self):
-        read_z1 = ttk.Button(self.frame1, text = "Z1 | read data from the file")
+        read_z1 = ttk.Button(self.frame1, text = "Z1 | read data from the file", command = lambda: self.read(self.Z1, 'Z1'))
         read_z1.grid(column=1, row = 5, columnspan = 2, sticky = (N, W, E, S))
-        read_z2 = ttk.Button(self.frame1, text = "Z2 | read data from the file")
+        read_z2 = ttk.Button(self.frame1, text = "Z2 | read data from the file", command = lambda: self.read(self.Z2, 'Z2'))
         read_z2.grid(column=3, columnspan = 2, row = 5, sticky = (N, W, E, S))
 
         ttk.Button(self.frame2, text = "Calculate", command = self.calculate).grid(column = 1, row = 1, sticky = (N, W, E, S))
@@ -303,7 +310,46 @@ class Main:
         self.Z3.B.text.grid(column = 3, row = 11, pady = 5, padx = 5, sticky = (W, E, N, S))
         self.Z3.Bs.text.grid(column = 4, row = 11, pady = 5, padx = 5, sticky=  (W, E, N, S))
 
+    def read(self, Z, number):
+        file_opt = {}
+        file_opt['defaultextension'] = '.txt'
+        file_opt['title'] = 'Reading Z-number'
+        file_opt['filetypes'] = [('all files', '.*'), ('text files', '.txt')]
 
+        def open_file_handler():
+            filePath = askopenfilename(**file_opt)
+            return filePath
+
+        def validate(data, number, part):
+            format = r'^[-+]?[0-9]*\.?[0-9]+(?:,[-+]?[0-9]*\.?[0-9]+?|)+$'
+            data = data.replace(" ", "")
+            if len(data) == 0 or re.match(format, data) == None:
+                raise ValueError('Error - ' + number + '[' + part + ']: bad format / mismatch')
+
+        filePath = open_file_handler()
+        if filePath == '':
+            return
+        names = ['a', 'as', 'b', 'bs']
+        self.error.set('')
+        with open(filePath, 'r') as f:
+            for line in f.readlines():
+                s = line.replace(" ", "")
+                result = s.split(':')
+                name = result[0].lower()
+                data = result[1].replace(" ", "")
+                data = data.strip()
+                part_names = ['A', 'As', 'B', 'Bs']
+                names_vars = dict(zip(part_names,[Z.A, Z.As, Z.B, Z.Bs]))
+                if len(result) > 0 and name in names:
+                    part_name = part_names[names.index(name)]
+                    part = names_vars[part_name]
+                    try:
+                        validate(data, number, part_name)
+                        part.text.delete("1.0", END)
+                        part.text.insert("1.0", data.replace(',', ', '))
+                        part.clicked = True
+                    except ValueError as e:
+                        self.error.set(str(e))
     def set_graphics(self):
         style.use("ggplot")
 
