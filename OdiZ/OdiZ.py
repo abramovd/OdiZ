@@ -349,7 +349,7 @@ class Main:
 
         ttk.Button(self.frame3, text = "Test values", command = self.example).grid(column=  0, row = 0, sticky = (N, W, E, S))
         ttk.Button(self.frame3, text = "Clear", command = self.clear).grid(column = 1, row = 0, sticky = (N, W, E, S))
-        ttk.Button(self.frame3, text = "Help").grid(column = 2, row = 0, sticky = (N, W, E, S))
+        ttk.Button(self.frame3, text = "Help", command = self.show_help).grid(column = 2, row = 0, sticky = (N, W, E, S))
 
         plotZ1a = ttk.Button(self.frame1, text = "Show Z1 (Part A)", command = lambda: self.plot_one_graph(self.Z1, 'Z1', 'A'))
         plotZ1a.grid(column = 1, row = 6, sticky = (N, W, E, S))
@@ -421,6 +421,30 @@ class Main:
         register(self.Z2.As.text, "Z2 (Part As)")
         register(self.Z2.B.text, "Z2 (Part B)")
         register(self.Z2.Bs.text, "Z2 (Part Bs)")
+
+    def show_help(self):
+        toplevel = Toplevel()
+        toplevel.title('Help')
+        toplevel.focus_set()
+        import tkMessageBox
+        txt = "This form is under development"
+        txt2 = u"\u00A9" + " Higher School of Economics"
+        txt3 = "Dmitry Abramov"
+        txt4 = "e-mail: dm.a.abramov@gmail.com"
+        txt5 = "version 1.1"
+        txt6 = "January-February 2016"
+        msg1 = Message(toplevel, anchor = CENTER, width = 300, text = txt, font = BASE_FONT)
+        msg1.grid(column = 0, row = 0, padx = 115, pady = 20, sticky = (W, E, N, S))
+        msg2 = Message(toplevel, anchor = CENTER, width = 300, text = txt2, font = BASE_FONT_BOLD)
+        msg2.grid(column = 0, columnspan = 2, row = 1, padx = 115, pady = 2, sticky = (W, E, N, S))
+        msg3 = Message(toplevel, anchor = CENTER, width = 300, text = txt3, font = BASE_FONT)
+        msg3.grid(column = 0, columnspan = 2, row = 2, padx = 115, pady = 2, sticky = (W, E, N, S))
+        msg5 = Message(toplevel, anchor = CENTER, width = 300, text = txt4, font = BASE_FONT)
+        msg5.grid(column = 0, columnspan = 2, row = 3, padx = 115, pady = 1, sticky = (W, E, N, S))
+        msg6 = Message(toplevel, anchor = CENTER, width = 300, text = txt5, font = ("Helvetica", 10))
+        msg6.grid(column=0, columnspan = 2, row = 4, padx = 115, pady = 2, sticky = (W, E, N, S))
+        msg7 = Message(toplevel, anchor = CENTER, width = 300, text = txt6, font = ("Helvetica", 10))
+        msg7.grid(column=0, columnspan = 2, row = 5, padx = 115, pady = 2, sticky = (W, E, N, S))
 
     def read(self, Z, number):
         file_opt = {}
@@ -523,7 +547,7 @@ class Main:
         plot_canvas.get_tk_widget().grid(column = 0, row = 0)
         self.save_canvas = Canvas(self.frame2, width = 1, height = 100)
         self.save_canvas.grid(row = 6, column = 0, columnspan = 2, padx = 100, pady = 15)
-        ttk.Button(self.save_canvas, text = "Save Graph").grid(column = 0, row = 0)
+        ttk.Button(self.save_canvas, text = "Save Graph", command = lambda: self.save_graph(self.fig, number, part)).grid(column = 0, row = 0)
         self.plotter(Z, number, part)
 
     def plotter_result(self):
@@ -536,7 +560,7 @@ class Main:
             self.sub_graphs[n_sub_graph].plot(xList, yList, marker = '8', linestyle='--')
             self.sub_graphs[n_sub_graph].set_xlim([0 - (max(xList) - min(xList)) / 10, max(xList) + (max(xList) - min(xList)) / 10])
             self.sub_graphs[n_sub_graph].set_ylim([-0.05, 1.05])
-            self.sub_graphs[n_sub_graph].set_title('Result (Part' + part + ')')
+            self.sub_graphs[n_sub_graph].set_title('Result (Part ' + part + ')')
             n_sub_graph += 1
 
     def plotter_all(self):
@@ -554,7 +578,7 @@ class Main:
                 title = 'Z1'
             else:
                 title = 'Z2'
-            self.sub_graphs[n_sub_graph].set_title(title + ' (Part' + part + ')')
+            self.sub_graphs[n_sub_graph].set_title(title + ' (Part ' + part + ')')
             n_sub_graph += 1
         #except:
         #self.error.set('Error - [Plotter]: plotting failed')
@@ -587,7 +611,7 @@ class Main:
         plt_canvas = FigureCanvasTkAgg(self.fig1, plt1)
         plt_canvas.show()
         plt_canvas.get_tk_widget().grid(column = 0, row = 0)
-        ttk.Button(self.all_graphs, text = "Save Graph").grid(column = 0, columnspan = 2, row = 1)
+        ttk.Button(self.all_graphs, text = "Save Graph", command = lambda: self.save_graph(self.fig1, 'Z12', part = 'Result')).grid(column = 0, columnspan = 2, row = 1)
         Message(self.all_graphs, text = "").grid(column=0, columnspan = 2, row = 2, pady = 15)
         self.plotter_all()
 
@@ -599,13 +623,28 @@ class Main:
         plt_canvas2 = FigureCanvasTkAgg(self.fig2, plt2)
         plt_canvas2.show()
         plt_canvas2.get_tk_widget().grid(column = 2, row = 0)
-        ttk.Button(self.all_graphs, text = "Save Graph").grid(column = 2, columnspan = 2, row = 1)
+        ttk.Button(self.all_graphs, text = "Save Graph", command = lambda: self.save_graph(self.fig2, 'Result', part = 'Result')).grid(column = 2, columnspan = 2, row = 1)
         Message(self.all_graphs, text = "").grid(column = 2, columnspan = 2, row = 2, pady = 15)
 
         self.plotter_result()
 
-    def save_graph(self):
-        pass
+    def save_graph(self, fig, number, part):
+        file_opts = {}
+        file_opts['defaultextension'] = '.png'
+        file_opts['title'] = 'Saving graph'
+        file_opts['filetypes'] = [('PNG', '.png'), ('PDF', '.pdf')]
+        if part != 'Result':
+            file_opts['initialfile'] = number + '[' + part + ']'
+        else:
+            file_opts['initialfile'] = number
+        filename = asksaveasfilename(**file_opts)
+        try:
+            fig.savefig(filename)
+        except:
+            if part != 'Result':
+                self.error.set('Error - ' + number + ' [' + part + ']:  bad extension for saving file')
+            else:
+                self.error.set('Error - ' + number + ' :  bad extension for saving file')
 
     def calculate(self):
         try:
