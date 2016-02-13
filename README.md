@@ -1,11 +1,13 @@
 # OdiZ - Operations on Discrete Z-numbers
 
-**OdiZ** is a standalone application for operations on discrete Z-numbers, which we proposed by **Prof. Lofti A. Zadeh**. Z-numbers
+**OdiZ** is a standalone application for operations on discrete Z-numbers, which we proposed by **Prof. Lofti A. Zadeh**.
 
 The concept of a Z-number is intended to provide a basis for computation with numbers which are not totally reliable. More concretely, a Z-number, Z=(A,B), is an ordered pair of two fuzzy numbers:
 
 * the first number, A, is a restriction on the values which a real-valued variable, X, can take.
 * the second number, B, is a restriction on the degree of certainty that X is A. Typically, A and B are described in a natural language.
+
+![Alt text](/docs/screen_MAC.png?raw=true "Screenshot")
 
 ## Supported operations
 
@@ -48,5 +50,8 @@ Now you shoud run OdiZ.py with Pythpon 2.X or 3.X (2.X is preferable).
 cd OdiZ
 python OdiZ.py
 ```
+
+## Author
+Dmitry Abramov &copy;
 
 
