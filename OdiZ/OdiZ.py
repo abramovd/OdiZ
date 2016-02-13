@@ -580,8 +580,6 @@ class Main:
                 title = 'Z2'
             self.sub_graphs[n_sub_graph].set_title(title + ' (Part ' + part + ')')
             n_sub_graph += 1
-        #except:
-        #self.error.set('Error - [Plotter]: plotting failed')
 
 
     def plot_all_graphs(self):
